@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sorteios Facilita Cell</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #FF6B00;
+      --orange-dark: #CC5500;
+      --orange-light: #FF8C33;
+      --orange-pale: #FFF0E5;
+      --black: #0D0D0D;
+      --black-soft: #1A1A1A;
+      --black-card: #222222;
+      --gray: #888888;
+      --gray-light: #CCCCCC;
+      --white: #FFFFFF;
+      --success: #22C55E;
+      --danger: #EF4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-pill: 999px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--black);
+      color: var(--white);
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: var(--black-soft);
+      border-bottom: 2px solid var(--orange);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--orange);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .logo-text { line-height: 1.1; }
+    .logo-text strong { display: block; font-size: 16px; font-weight: 800; color: var(--orange); letter-spacing: -0.3px; }
+    .logo-text span { font-size: 11px; color: var(--gray); font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .firebase-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: #1E1E1E; border: 1px solid #333;
+      border-radius: var(--radius-pill); padding: 5px 12px;
+      font-size: 12px; color: var(--gray);
+    }
+    .firebase-dot { width: 7px; height: 7px; border-radius: 50%; background: #888; }
+    .firebase-dot.connected { background: var(--success); }
+    .firebase-dot.syncing { background: var(--orange); animation: pulse 1s infinite; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes slideIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes pop { 0%{transform:scale(0.95)} 60%{transform:scale(1.03)} 100%{transform:scale(1)} }
+    @keyframes rouletteFlash { 0%,100%{color:var(--white);text-shadow:none} 50%{color:var(--orange);text-shadow:0 0 30px rgba(255,107,0,0.8)} }
+    @keyframes confetti { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(400px) rotate(720deg);opacity:0} }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    @keyframes scaleIn { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+
+    /* ===== LAYOUT ===== */
+    main { max-width: 920px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ===== TABS ===== */
+    .tabs { display: flex; gap: 4px; background: #111; border-radius: var(--radius); padding: 4px; margin-bottom: 1.5rem; }
+    .tab {
+      flex: 1; height: 38px; border: none; border-radius: var(--radius-sm);
+      background: transparent; color: var(--gray); font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .tab.active { background: var(--orange); color: var(--white); }
+    .tab:hover:not(.active) { color: var(--white); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ===== STATS ===== */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--black-card); border: 1px solid #333; border-radius: var(--radius); padding: 1rem 1.25rem; }
+    .stat-card.highlight { border-color: var(--orange); }
+    .stat-label { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .stat-val { font-size: 28px; font-weight: 700; color: var(--white); }
+    .stat-card.highlight .stat-val { color: var(--orange); }
+
+    /* ===== CARD ===== */
+    .card { background: var(--black-card); border: 1px solid #2E2E2E; border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+    .card-title {
+      font-size: 13px; font-weight: 600; color: var(--orange);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title svg { width: 16px; height: 16px; }
+
+    /* ===== INPUT ===== */
+    .input-row { display: flex; gap: 8px; }
+    input[type="tel"], input[type="text"], input[type="password"], input[type="number"] {
+      flex: 1; height: 46px; background: #111; border: 1px solid #333;
+      border-radius: var(--radius-sm); color: var(--white); font-size: 15px;
+      font-family: 'Inter', sans-serif; padding: 0 14px; outline: none; transition: border-color 0.2s;
+    }
+    input[type="tel"]:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus {
+      border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,0,0.15);
+    }
+    input::placeholder { color: #555; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      height: 46px; padding: 0 20px; border-radius: var(--radius-sm); border: none;
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      gap: 7px; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--orange); color: var(--white); }
+    .btn-primary:hover { background: var(--orange-light); }
+    .btn-primary:disabled { background: #444; color: #666; cursor: not-allowed; transform: none; }
+    .btn-outline { background: transparent; border: 1px solid #444; color: var(--gray-light); }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-danger-outline { background: transparent; border: 1px solid #444; color: #aaa; }
+    .btn-danger-outline:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-success { background: #166534; border: 1px solid var(--success); color: var(--success); }
+    .btn-success:hover { background: #15803d; }
+    .btn-lg { width: 100%; height: 56px; font-size: 16px; border-radius: var(--radius); }
+    .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .btn.spinning svg.spin-icon { animation: spin 0.7s linear infinite; }
+    .btn-sm { height: 36px; padding: 0 14px; font-size: 13px; }
+    .btn-icon { width: 36px; height: 36px; padding: 0; }
+
+    /* ===== TAGS ===== */
+    .participant-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; }
+    .p-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1A1A1A; border: 1px solid #333;
+      border-radius: var(--radius-pill); padding: 5px 10px 5px 12px;
+      font-size: 13px; color: var(--gray-light); animation: slideIn 0.2s ease;
+    }
+    .p-tag.drawn { background: rgba(255,107,0,0.1); border-color: var(--orange); color: var(--orange-light); }
+    .tag-del { background: none; border: none; cursor: pointer; color: #555; display: flex; align-items: center; padding: 2px; border-radius: 50%; transition: color 0.15s; }
+    .tag-del:hover { color: var(--danger); }
+    .tag-del svg { width: 13px; height: 13px; }
+    .empty-msg { color: #555; font-size: 13px; padding: 8px 0; }
+
+    /* ===== ROLETA ===== */
+    .roulette-container {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 2rem 1rem; position: relative;
+    }
+    .roulette-canvas-wrap { position: relative; margin-bottom: 1.5rem; }
+    #rouletteCanvas { border-radius: 50%; box-shadow: 0 0 40px rgba(255,107,0,0.3); }
+    .roulette-pointer {
+      position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 28px solid var(--orange);
+      filter: drop-shadow(0 2px 6px rgba(255,107,0,0.7));
+      z-index: 10;
+    }
+    .roulette-spin-btn {
+      background: var(--orange); color: var(--white); border: none;
+      font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800;
+      padding: 16px 48px; border-radius: var(--radius-pill); cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(255,107,0,0.4);
+    }
+    .roulette-spin-btn:hover { background: var(--orange-light); transform: scale(1.04); }
+    .roulette-spin-btn:disabled { background: #444; color: #666; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ===== SORTEIO DISPLAY ===== */
+    .draw-result {
+      margin-top: 1rem; background: #111; border: 1px solid var(--orange);
+      border-radius: var(--radius); padding: 1.5rem; text-align: center; animation: pop 0.35s ease;
+    }
+    .draw-result-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); margin-bottom: 8px; }
+    .draw-result-number { font-size: 32px; font-weight: 800; color: var(--white); letter-spacing: 1.5px; }
+    .draw-result-number.flashing { animation: rouletteFlash 0.12s ease infinite; }
+    .draw-result-sub { font-size: 12px; color: var(--gray); margin-top: 6px; }
+
+    /* ===== HISTORICO ===== */
+    .history-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1E1E1E; }
+    .history-row:last-child { border-bottom: none; }
+    .history-badge { min-width: 32px; height: 32px; background: rgba(255,107,0,0.15); color: var(--orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .history-phone { flex: 1; font-size: 14px; color: var(--white); }
+    .history-time { font-size: 11px; color: #555; }
+
+    /* ===== ACTIONS ===== */
+    .actions-row { display: flex; gap: 8px; }
+
+    /* ===== TOAST ===== */
+    .toast-wrap { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; z-index: 9999; pointer-events: none; }
+    .toast { background: #1A1A1A; border: 1px solid #333; color: var(--white); font-size: 13px; padding: 10px 20px; border-radius: var(--radius-pill); animation: slideIn 0.25s ease; white-space: nowrap; }
+    .toast.ok { border-color: var(--success); color: var(--success); }
+    .toast.err { border-color: var(--danger); color: var(--danger); }
+    .toast.fire { border-color: var(--orange); color: var(--orange-light); }
+
+    /* ===== MODAL ADMIN ===== */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--black-card); border: 1px solid #444; border-radius: 16px;
+      padding: 2rem; width: 90%; max-width: 420px; animation: scaleIn 0.2s ease;
+    }
+    .modal h2 { font-size: 18px; font-weight: 800; margin-bottom: 0.5rem; }
+    .modal p { font-size: 13px; color: var(--gray); margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 1rem; }
+
+    /* ===== MODO TV ===== */
+    .tv-overlay {
+      position: fixed; inset: 0; background: #000;
+      display: none; flex-direction: column;
+      z-index: 2000; animation: fadeIn 0.3s ease;
+      overflow: hidden;
+    }
+    .tv-overlay.visible { display: flex; }
+    /* Barra superior: gravação à esq, fechar à dir */
+    .tv-topbar {
+      width: 100%; display: flex; align-items: center;
+      justify-content: space-between; padding: 1.2rem 1.5rem;
+      flex-shrink: 0;
+    }
+    .tv-record-btn {
+      background: rgba(239,68,68,0.15);
+      border: 1.5px solid #EF4444; color: #EF4444;
+      font-family: Inter, sans-serif; font-size: 14px; font-weight: 700;
+      padding: 8px 20px; border-radius: 999px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+    }
+    .tv-record-btn:hover { background: rgba(239,68,68,0.3); }
+    .tv-record-live {
+      display: none; align-items: center; gap: 10px;
+      background: rgba(80,0,0,0.85); border: 1.5px solid #EF4444;
+      border-radius: 999px; padding: 7px 16px;
+    }
+    .tv-close {
+      background: rgba(255,255,255,0.1); border: none; color: var(--white);
+      width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    /* Corpo central: ocupa espaço restante */
+    .tv-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 0 2rem; min-height: 0;
+    }
+    .tv-logo { font-size: 22px; font-weight: 800; color: var(--orange); letter-spacing: -0.5px; margin-bottom: 2rem; }
+    .tv-label { font-size: 18px; color: var(--gray); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 0.75rem; }
+    .tv-number {
+      font-size: clamp(60px, 10vw, 130px); font-weight: 800; color: var(--white);
+      font-family: 'Inter', Arial, Helvetica, sans-serif;
+      white-space: nowrap; line-height: 1; text-align: center;
+      letter-spacing: 4px;
+      text-shadow: 0 0 60px rgba(255,107,0,0.4); transition: color 0.1s;
+    }
+    .tv-number.flashing { animation: rouletteFlash 0.12s ease infinite; }
+    .tv-sub { font-size: 16px; color: var(--orange); margin-top: 1rem; min-height: 24px; }
+    .tv-draw-btn {
+      margin-top: 2rem; background: var(--orange); color: var(--white);
+      border: none; font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800;
+      padding: 16px 56px; border-radius: var(--radius-pill); cursor: pointer;
+      box-shadow: 0 4px 30px rgba(255,107,0,0.5); transition: all 0.2s;
+    }
+    .tv-draw-btn:hover { background: var(--orange-light); transform: scale(1.04); }
+    .tv-draw-btn:disabled { background: #333; color: #555; cursor: not-allowed; transform: none; box-shadow: none; }
+    /* Rodapé stats */
+    .tv-stats {
+      width: 100%; display: flex; justify-content: center; gap: 4rem;
+      padding: 1.2rem 1.5rem; flex-shrink: 0;
+      border-top: 1px solid #1a1a1a; text-align: center;
+    }
+    .tv-stat-val { font-size: 32px; font-weight: 800; color: var(--orange); }
+    .tv-stat-label { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    /* ===== CONFETTI ===== */
+    .confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 9998; overflow: hidden; }
+    .confetti-piece {
+      position: absolute; width: 10px; height: 10px;
+      animation: confetti 3s ease-out forwards;
+    }
+
+    /* ===== RECORD BAR ===== */
+    .record-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: #1a0a00; border: 1px solid #5C2200;
+      border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 1rem;
+    }
+    .record-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: pulse 1s infinite; flex-shrink: 0; }
+    .record-bar span { font-size: 13px; color: #FF8C33; flex: 1; }
+    .record-time { font-size: 12px; color: var(--danger); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    /* ===== IMPORT DROP ===== */
+    .drop-zone {
+      border: 2px dashed #444; border-radius: var(--radius); padding: 2rem;
+      text-align: center; cursor: pointer; transition: all 0.2s; color: var(--gray);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--orange); color: var(--orange); background: rgba(255,107,0,0.05); }
+    .drop-zone svg { width: 32px; height: 32px; margin-bottom: 0.75rem; }
+    .drop-zone p { font-size: 14px; margin-bottom: 4px; }
+    .drop-zone small { font-size: 12px; color: #555; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      header { padding: 0 1rem; }
+      main { padding: 1rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stats-grid .stat-card:last-child { grid-column: 1 / -1; }
+      .btn-lg { height: 50px; font-size: 15px; }
+      .draw-result-number { font-size: 26px; }
+      .tv-number { font-size: 64px; }
+    }
+
+    /* ===== EXPORT BUTTONS ROW ===== */
+    .export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔥</div>
+    <div class="logo-text">
+      <strong>Sorteios Facilita Cell</strong>
+      <span>Sistema de sorteio profissional</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="firebase-badge">
+      <div class="firebase-dot" id="fbDot"></div>
+      <span id="fbStatus">Conectando...</span>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="openAdminModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Admin
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="openTVMode()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>
+      TV
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">📋 Cadastrados</div>
+      <div class="stat-val" id="statTotal">0</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-label">🏆 Sorteados</div>
+      <div class="stat-val" id="statDrawn">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">⏳ Restantes</div>
+      <div class="stat-val" id="statRemaining">0</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('manual')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+      Manual
+    </button>
+    <button class="tab" onclick="switchTab('import')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar
+    </button>
+    <button class="tab" onclick="switchTab('roleta')">
+      🎡 Roleta
+    </button>
+    <button class="tab" onclick="switchTab('sorteio')">
+      ⭐ Sorteio
+    </button>
+    <button class="tab" onclick="switchTab('historico')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Histórico
+    </button>
+  </div>
+
+  <!-- TAB: MANUAL -->
+  <div class="tab-panel active" id="panel-manual">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Adicionar participante
+      </div>
+      <div class="input-row">
+        <input type="tel" id="phoneInput" placeholder="Ex: (45) 99999-0001" maxlength="20" />
+        <button class="btn btn-primary" onclick="addParticipant()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Adicionar
+        </button>
+      </div>
+      <p style="font-size:12px;color:#555;margin-top:8px;">Pressione Enter para adicionar rapidamente</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6M9 8h6M9 16h4"/></svg>
+        Participantes
+      </div>
+      <div class="participant-list" id="participantList">
+        <span class="empty-msg">Nenhum participante cadastrado ainda.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: IMPORTAR -->
+  <div class="tab-panel" id="panel-import">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importar participantes via planilha
+      </div>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="handleFileImport(this.files[0])">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Clique ou arraste um arquivo aqui</p>
+        <small>Formatos: CSV, TXT (um número por linha), Excel (.xlsx)</small>
+      </div>
+      <div id="importPreview" style="margin-top:1rem;display:none">
+        <div style="font-size:13px;color:var(--gray);margin-bottom:8px;" id="importCount"></div>
+        <div style="max-height:200px;overflow-y:auto;background:#111;border-radius:var(--radius-sm);padding:10px;font-size:13px;font-family:monospace;color:var(--gray-light);" id="importList"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn btn-primary" style="flex:1" onclick="confirmImport()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><polyline points="20 6 9 17 4 12"/></svg>
+            Importar tudo
+          </button>
+          <button class="btn btn-outline" onclick="cancelImport()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 Como preparar sua planilha</div>
+      <div style="font-size:13px;color:var(--gray);line-height:1.7;">
+        <p>• <strong style="color:var(--white)">CSV / TXT:</strong> Um número de telefone por linha. Pode ter ou não formatação.</p>
+        <p>• <strong style="color:var(--white)">Excel (.xlsx):</strong> Primeira coluna com os números. A primeira linha pode ser cabeçalho (será ignorada se não contiver dígitos).</p>
+        <p>• Números duplicados serão ignorados automaticamente.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ROLETA -->
+  <div class="tab-panel" id="panel-roleta">
+    <div class="card">
+      <div class="card-title">🎡 Animação de Roleta Visual</div>
+      <div class="roulette-container">
+        <div class="roulette-canvas-wrap">
+          <div class="roulette-pointer"></div>
+          <canvas id="rouletteCanvas" width="340" height="340"></canvas>
+        </div>
+        <button class="roulette-spin-btn" id="rouletteBtn" onclick="spinRoulette()" disabled>
+          🎰 GIRAR!
+        </button>
+        <div id="rouletteResult" style="margin-top:1.5rem;text-align:center;display:none">
+          <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🏆 Sorteado!</div>
+          <div style="font-size:28px;font-weight:800;color:var(--orange);" id="rouletteWinnerText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SORTEIO -->
+  <div class="tab-panel" id="panel-sorteio">
+    <!-- RECORD BAR (oculto por padrão) -->
+    <div class="record-bar" id="recordBar" style="display:none">
+      <div class="record-dot"></div>
+      <span>⏺ Gravando tela do sorteio...</span>
+      <span class="record-time" id="recordTimer">00:00</span>
+      <button class="btn btn-danger-outline btn-sm" onclick="stopRecording()">⏹ Parar</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Realizar sorteio
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem;">
+        <button class="btn btn-outline btn-sm" id="recordBtn" onclick="startRecording()" style="gap:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="var(--danger)" stroke="none"/></svg>
+          Gravar tela
+        </button>
+      </div>
+      <button class="btn btn-primary btn-lg" id="drawBtn" onclick="drawWinner()" disabled>
+        <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Sortear próximo número
+      </button>
+      <div id="winnerBox" style="display:none"></div>
+    </div>
+
+    <div class="export-row">
+      <button class="btn btn-success btn-sm" onclick="exportPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Exportar PDF
+      </button>
+      <button class="btn btn-success btn-sm" onclick="exportExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18M3 15h18M15 3v18"/></svg>
+        Exportar Excel
+      </button>
+    </div>
+
+    <!-- AÇÕES -->
+    <div class="actions-row">
+      <button class="btn btn-outline" style="flex:1" onclick="resetDrawn()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reiniciar sorteios
+      </button>
+      <button class="btn btn-danger-outline" style="flex:1" onclick="clearAll()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Limpar tudo
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB: HISTÓRICO -->
+  <div class="tab-panel" id="panel-historico">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Histórico de sorteios
+      </div>
+      <div id="historyList"><span class="empty-msg">Nenhum sorteio realizado.</span></div>
+    </div>
+    <div class="export-row">
+      <button class="btn btn-success btn-sm" onclick="exportPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Exportar PDF
+      </button>
+      <button class="btn btn-success btn-sm" onclick="exportExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18M3 15h18M15 3v18"/></svg>
+        Exportar Excel
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<!-- MODAL ADMIN -->
+<div class="modal-overlay hidden" id="adminModal">
+  <div class="modal">
+    <h2>🔐 Área do Administrador</h2>
+    <p>Digite a senha de administrador para continuar.</p>
+    <input type="password" id="adminPassInput" placeholder="Senha de administrador" style="width:100%;margin-bottom:8px;" />
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="verifyAdmin()">Entrar</button>
+      <button class="btn btn-outline" onclick="closeAdminModal()">Cancelar</button>
+    </div>
+    <div id="adminPanelContent" style="display:none;margin-top:1.5rem;border-top:1px solid #333;padding-top:1.5rem;">
+      <p style="color:var(--success);font-size:13px;margin-bottom:1rem;">✓ Acesso autorizado</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-danger-outline" onclick="adminResetAll()">🗑 Apagar todos os participantes e histórico</button>
+        <button class="btn btn-outline" onclick="adminResetDrawn()">🔄 Reiniciar sorteios (manter participantes)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODO TV -->
+<div class="tv-overlay" id="tvOverlay" style="display:none">
+
+  <!-- Barra superior -->
+  <div class="tv-topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="tv-record-btn" id="tvRecordBtn" onclick="tvStartRecording()">
+        <span style="width:10px;height:10px;background:#EF4444;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+        ⏺ GRAVAR TELA
+      </button>
+      <div class="tv-record-live" id="tvRecordBar">
+        <span style="width:10px;height:10px;background:#EF4444;border-radius:50%;animation:pulse 1s infinite;display:inline-block;flex-shrink:0;"></span>
+        <span style="font-size:13px;color:#FF8C33;font-family:Inter,sans-serif;font-weight:600;">GRAVANDO</span>
+        <span id="tvRecordTimer" style="font-size:14px;color:#EF4444;font-weight:800;font-variant-numeric:tabular-nums;font-family:Inter,sans-serif;">00:00</span>
+        <button onclick="stopRecording()" style="background:none;border:1.5px solid #EF4444;color:#EF4444;font-family:Inter,sans-serif;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;cursor:pointer;">⏹ Parar</button>
+      </div>
+    </div>
+    <button class="tv-close" onclick="closeTVMode()">✕</button>
+  </div>
+
+  <!-- Conteúdo central -->
+  <div class="tv-body">
+    <div class="tv-logo">🔥 Facilita Cell</div>
+    <div class="tv-label">Número sorteado</div>
+    <div class="tv-number" id="tvNumber">- - -</div>
+    <div class="tv-sub" id="tvSub">&nbsp;</div>
+    <button class="tv-draw-btn" id="tvDrawBtn" onclick="drawWinner(true)">🎰 SORTEAR</button>
+  </div>
+
+  <!-- Rodapé stats -->
+  <div class="tv-stats">
+    <div>
+      <div class="tv-stat-val" id="tvStatTotal">0</div>
+      <div class="tv-stat-label">Cadastrados</div>
+    </div>
+    <div>
+      <div class="tv-stat-val" id="tvStatDrawn">0</div>
+      <div class="tv-stat-label">Sorteados</div>
+    </div>
+    <div>
+      <div class="tv-stat-val" id="tvStatRemaining">0</div>
+      <div class="tv-stat-label">Restantes</div>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE SDK compat (sem type=module — funciona com onclick normalmente) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function() {
+  /* ================================================================
+     ESTADO GLOBAL
+  ================================================================ */
+  var _db = null;
+  var _isConnected = false;
+  var _participants = [];
+  var _drawnSet = new Set();
+  var _drawHistory = [];
+  var _isDrawing = false;
+  var _adminUnlocked = false;
+  var ADMIN_PASSWORD = 'facilita2026';
+
+  /* ================================================================
+     HELPERS INTERNOS
+  ================================================================ */
+  function _showToast(msg, type) {
+    type = type || '';
+    var wrap = document.getElementById('toastWrap');
+    var t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    wrap.appendChild(t);
+    setTimeout(function() { t.remove(); }, 3000);
+  }
+
+  function _formatPhone(raw) {
+    var d = raw.replace(/\D/g, '');
+    if (d.length === 11) return '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7);
+    if (d.length === 10) return '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
+    return raw.trim();
+  }
+
+  function _setFbSyncing() {
+    var dot = document.getElementById('fbDot');
+    var st  = document.getElementById('fbStatus');
+    if (dot) dot.className = 'firebase-dot syncing';
+    if (st)  st.textContent = 'Sincronizando...';
+  }
+
+  function _clearFbSyncing() {
+    var dot = document.getElementById('fbDot');
+    var st  = document.getElementById('fbStatus');
+    if (dot) dot.className = 'firebase-dot ' + (_isConnected ? 'connected' : '');
+    if (st)  st.textContent = _isConnected ? 'Firebase conectado' : 'Sem conexão';
+  }
+
+  /* ================================================================
+     TV — ATUALIZA STATS E BOTÃO (centralizado)
+  ================================================================ */
+  function _updateTVStats() {
+    var total     = _participants.length;
+    var drawn     = _drawnSet.size;
+    var remaining = total - drawn;
+
+    var elT = document.getElementById('tvStatTotal');
+    var elD = document.getElementById('tvStatDrawn');
+    var elR = document.getElementById('tvStatRemaining');
+    if (elT) elT.textContent = total;
+    if (elD) elD.textContent = drawn;
+    if (elR) elR.textContent = remaining;
+
+    var tvBtn = document.getElementById('tvDrawBtn');
+    if (!tvBtn) return;
+    if (remaining > 0) {
+      tvBtn.disabled = false;
+      tvBtn.textContent = '🎰 SORTEAR';
+      tvBtn.style.cssText = '';          /* reseta qualquer estilo inline */
+    } else if (total > 0) {
+      tvBtn.disabled = true;
+      tvBtn.textContent = '✓ Todos sorteados!';
+    } else {
+      tvBtn.disabled = true;
+      tvBtn.textContent = '🎰 SORTEAR';
+    }
+  }
+
+  /* ================================================================
+     RENDER
+  ================================================================ */
+  function _updateStats() {
+    var elT = document.getElementById('statTotal');
+    var elD = document.getElementById('statDrawn');
+    var elR = document.getElementById('statRemaining');
+    if (elT) elT.textContent = _participants.length;
+    if (elD) elD.textContent = _drawnSet.size;
+    if (elR) elR.textContent = _participants.length - _drawnSet.size;
+  }
+
+  function _updateDrawBtn() {
+    var btn = document.getElementById('drawBtn');
+    if (!btn) return;
+    var remaining = _participants.length - _drawnSet.size;
+    btn.disabled = (remaining === 0);
+    if (remaining === 0 && _participants.length > 0) {
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><polyline points="20 6 9 17 4 12"/></svg> Todos foram sorteados!';
+    } else {
+      btn.innerHTML = '<svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Sortear próximo número';
+    }
+  }
+
+  function _renderParticipants() {
+    var el = document.getElementById('participantList');
+    if (!el) return;
+    if (!_participants.length) {
+      el.innerHTML = '<span class="empty-msg">Nenhum participante cadastrado ainda.</span>';
+      return;
+    }
+    el.innerHTML = _participants.map(function(p) {
+      var drawn = _drawnSet.has(p.key);
+      return '<span class="p-tag ' + (drawn ? 'drawn' : '') + '">' +
+        (drawn ? '<span style="display:flex;color:var(--orange)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg></span>' : '') +
+        p.display +
+        (!drawn ? '<button class="tag-del" onclick="removeParticipant(\'' + p.id + '\',\'' + p.key + '\')" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '') +
+        '</span>';
+    }).join('');
+  }
+
+  function _renderHistory() {
+    var el = document.getElementById('historyList');
+    if (!el) return;
+    if (!_drawHistory.length) {
+      el.innerHTML = '<span class="empty-msg">Nenhum sorteio realizado.</span>';
+      return;
+    }
+    el.innerHTML = _drawHistory.map(function(h, i) {
+      return '<div class="history-row">' +
+        '<div class="history-badge">' + (_drawHistory.length - i) + 'º</div>' +
+        '<div class="history-phone">' + h.display + '</div>' +
+        '<div class="history-time">' + (h.time || '') + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function _render() {
+    _renderParticipants();
+    _updateStats();
+    _updateDrawBtn();
+    _updateTVStats();
+    _drawWheel();
+    var rb = document.getElementById('rouletteBtn');
+    if (rb) rb.disabled = (_participants.filter(function(p){ return !_drawnSet.has(p.key); }).length === 0);
+  }
+
+  function _buildResultHTML(num, sub) {
+    return '<div class="draw-result">' +
+      '<div class="draw-result-label">🏆 Sorteado!</div>' +
+      '<div class="draw-result-number">' + num + '</div>' +
+      (sub ? '<div class="draw-result-sub">' + sub + '</div>' : '') +
+      '</div>';
+  }
+
+  /* ================================================================
+     FIREBASE INIT
+  ================================================================ */
+  var firebaseConfig = {
+    apiKey:            "AIzaSyDfH7JoyM9lCcuFGN7r9xlftmJNG8Ljjuw",
+    authDomain:        "sorteio-a1c38.firebaseapp.com",
+    databaseURL:       "https://sorteio-a1c38-default-rtdb.firebaseio.com",
+    projectId:         "sorteio-a1c38",
+    storageBucket:     "sorteio-a1c38.firebasestorage.app",
+    messagingSenderId: "473886413394",
+    appId:             "1:473886413394:web:96b49fa2c19d1a0d41058b"
+  };
+
+  try {
+    var _app = firebase.initializeApp(firebaseConfig);
+    _db = firebase.database();
+
+    _db.ref('.info/connected').on('value', function(snap) {
+      _isConnected = !!snap.val();
+      var dot = document.getElementById('fbDot');
+      var st  = document.getElementById('fbStatus');
+      if (dot) dot.className = 'firebase-dot ' + (_isConnected ? 'connected' : '');
+      if (st)  st.textContent = _isConnected ? 'Firebase conectado' : 'Sem conexão';
+    });
+
+    _db.ref('participantes').on('value', function(snap) {
+      _participants = []; _drawnSet.clear();
+      if (snap.exists()) {
+        snap.forEach(function(child) {
+          var d = child.val();
+          _participants.push({ id: child.key, key: d.key, display: d.display });
+          if (d.drawn) _drawnSet.add(d.key);
+        });
+      }
+      _render();
+    });
+
+    _db.ref('historico').on('value', function(snap) {
+      _drawHistory = [];
+      if (snap.exists()) {
+        snap.forEach(function(child) {
+          _drawHistory.unshift(Object.assign({}, child.val(), { fbKey: child.key }));
+        });
+      }
+      _renderHistory();
+    });
+
+    _showToast('🔥 Firebase conectado', 'fire');
+  } catch(e) {
+    var st = document.getElementById('fbStatus');
+    if (st) st.textContent = 'Modo offline';
+    _showToast('Modo offline ativado', 'err');
+  }
+
+  /* ================================================================
+     ADMIN
+  ================================================================ */
+  window.openAdminModal = function() {
+    document.getElementById('adminModal').classList.remove('hidden');
+    document.getElementById('adminPassInput').value = '';
+    document.getElementById('adminPanelContent').style.display = 'none';
+    setTimeout(function() { document.getElementById('adminPassInput').focus(); }, 100);
+  };
+  window.closeAdminModal = function() {
+    document.getElementById('adminModal').classList.add('hidden');
+    _adminUnlocked = false;
+  };
+  window.verifyAdmin = function() {
+    var val = document.getElementById('adminPassInput').value;
+    if (val === ADMIN_PASSWORD) {
+      _adminUnlocked = true;
+      document.getElementById('adminPanelContent').style.display = 'block';
+    } else {
+      _showToast('Senha incorreta!', 'err');
+      document.getElementById('adminPassInput').value = '';
+    }
+  };
+  window.adminResetAll = function() {
+    if (!_adminUnlocked) return;
+    if (!confirm('Apagar TODOS os participantes e histórico?')) return;
+    if (_db) {
+      _setFbSyncing();
+      _db.ref('participantes').remove().then(function() {
+        return _db.ref('historico').remove();
+      }).then(function() { _clearFbSyncing(); });
+    } else {
+      _participants = []; _drawnSet.clear(); _drawHistory = [];
+      _render(); _renderHistory();
+    }
+    var wb = document.getElementById('winnerBox');
+    if (wb) wb.style.display = 'none';
+    window.closeAdminModal();
+    _showToast('Lista apagada', 'ok');
+  };
+  window.adminResetDrawn = function() {
+    if (!_adminUnlocked) return;
+    if (!confirm('Reiniciar todos os sorteios?')) return;
+    if (_db) {
+      _setFbSyncing();
+      _db.ref('participantes').once('value').then(function(snap) {
+        var updates = {};
+        if (snap.exists()) {
+          snap.forEach(function(c) {
+            updates['participantes/' + c.key] = Object.assign({}, c.val(), { drawn: false });
+          });
+        }
+        var keys = Object.keys(updates);
+        var chain = Promise.resolve();
+        keys.forEach(function(k) { chain = chain.then(function() { return _db.ref(k).set(updates[k]); }); });
+        return chain;
+      }).then(function() {
+        return _db.ref('historico').remove();
+      }).then(function() { _clearFbSyncing(); });
+    } else {
+      _drawnSet.clear(); _drawHistory = [];
+      _render(); _renderHistory();
+    }
+    var wb = document.getElementById('winnerBox');
+    if (wb) wb.style.display = 'none';
+    window.closeAdminModal();
+    _showToast('Sorteios reiniciados', 'ok');
+  };
+  document.getElementById('adminPassInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') window.verifyAdmin();
+  });
+
+  /* ================================================================
+     MODO TV
+  ================================================================ */
+  window.openTVMode = function() {
+    var ov = document.getElementById('tvOverlay');
+    ov.style.display = 'flex';
+    _updateTVStats();
+  };
+  window.closeTVMode = function() {
+    document.getElementById('tvOverlay').style.display = 'none';
+  };
+
+  /* ================================================================
+     IMPORTAR PLANILHA
+  ================================================================ */
+  var _importBuffer = [];
+
+  var dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('drag-over'); });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    var file = e.dataTransfer.files[0];
+    if (file) window.handleFileImport(file);
+  });
+
+  window.handleFileImport = function(file) {
+    if (!file) return;
+    var name = file.name.toLowerCase();
+    var reader = new FileReader();
+    if (name.endsWith('.csv') || name.endsWith('.txt')) {
+      reader.onload = function(e) { _parseTextNumbers(e.target.result); };
+      reader.readAsText(file);
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      reader.onload = function(e) { _parseExcelNumbers(e.target.result); };
+      reader.readAsArrayBuffer(file);
+    } else {
+      _showToast('Formato não suportado. Use CSV, TXT ou Excel.', 'err');
+    }
+  };
+
+  function _parseTextNumbers(text) {
+    var lines = text.split(/[\r\n,;]+/).map(function(l){ return l.trim(); }).filter(function(l){ return /\d{6,}/.test(l); });
+    var seen = {};
+    _importBuffer = [];
+    lines.forEach(function(l) {
+      var k = l.replace(/\D/g, '');
+      if (k.length >= 8 && !seen[k]) { seen[k] = true; _importBuffer.push({ key: k, display: _formatPhone(k) }); }
+    });
+    _showImportPreview();
+  }
+
+  function _parseExcelNumbers(buffer) {
+    try {
+      var bytes = new Uint8Array(buffer);
+      var text  = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+      var nums  = [];
+      var matches = text.matchAll(/\d{8,15}/g);
+      for (var m of matches) { var k = m[0]; if (k.length >= 8 && k.length <= 15) nums.push(k); }
+      var seen = {};
+      _importBuffer = [];
+      nums.forEach(function(k) { if (!seen[k]) { seen[k] = true; _importBuffer.push({ key: k, display: _formatPhone(k) }); }});
+      _showImportPreview();
+    } catch(e) { _showToast('Erro ao ler Excel. Tente CSV.', 'err'); }
+  }
+
+  function _showImportPreview() {
+    if (!_importBuffer.length) { _showToast('Nenhum número encontrado no arquivo', 'err'); return; }
+    document.getElementById('importCount').textContent = _importBuffer.length + ' número(s) encontrado(s)';
+    document.getElementById('importList').innerHTML = _importBuffer.slice(0, 50).map(function(p){ return p.display; }).join('<br>') + (_importBuffer.length > 50 ? '<br><em>...e mais ' + (_importBuffer.length - 50) + '</em>' : '');
+    document.getElementById('importPreview').style.display = 'block';
+  }
+
+  window.confirmImport = function() {
+    var added = 0, skipped = 0;
+    var chain = Promise.resolve();
+    _importBuffer.forEach(function(p) {
+      if (_participants.find(function(x){ return x.key === p.key; })) { skipped++; return; }
+      var data = { key: p.key, display: p.display, drawn: false, criadoEm: Date.now() };
+      if (_db) {
+        chain = chain.then(function() {
+          _setFbSyncing();
+          return _db.ref('participantes').push(data).then(function() { _clearFbSyncing(); });
+        });
+      } else {
+        _participants.push(Object.assign({ id: Date.now() + Math.random() }, data));
+      }
+      added++;
+    });
+    chain.then(function() {
+      if (!_db) _render();
+      window.cancelImport();
+      _showToast('✓ ' + added + ' importado(s)' + (skipped ? ', ' + skipped + ' duplicado(s) ignorado(s)' : ''), 'ok');
+    });
+  };
+
+  window.cancelImport = function() {
+    _importBuffer = [];
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+  };
+
+  /* ================================================================
+     ROLETA VISUAL
+  ================================================================ */
+  var canvas = document.getElementById('rouletteCanvas');
+  var ctx    = canvas.getContext('2d');
+  var _rouletteAngle    = 0;
+  var _rouletteSpinning = false;
+  var COLORS = ['#FF6B00','#CC5500','#FF8C33','#1A1A1A','#2E2E2E','#3A3A3A','#FF4500','#E65C00'];
+
+  function _drawWheel() {
+    var available = _participants.filter(function(p){ return !_drawnSet.has(p.key); });
+    var count     = Math.max(available.length, 1);
+    var sliceAngle = (2 * Math.PI) / count;
+    var cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 8;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < count; i++) {
+      var startA = _rouletteAngle + i * sliceAngle;
+      var endA   = startA + sliceAngle;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startA, endA); ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+      ctx.strokeStyle = '#0D0D0D'; ctx.lineWidth = 2; ctx.stroke();
+      if (count <= 20 && available[i]) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(startA + sliceAngle / 2);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        var fontSize = count <= 4 ? 14 : count <= 8 ? 12 : 10;
+        ctx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+        /* posiciona o texto a 60% do raio, longe do centro */
+        var textRadius = r * 0.62;
+        ctx.translate(textRadius, 0);
+        ctx.rotate(Math.PI / 2); /* vira o texto para ficar legível de fora para dentro */
+        var label = available[i].display;
+        /* quebra o número em duas linhas se for longo */
+        if (label.length > 9 && count <= 10) {
+          var mid = Math.ceil(label.length / 2);
+          ctx.fillText(label.slice(0, mid), 0, -fontSize * 0.6);
+          ctx.fillText(label.slice(mid), 0, fontSize * 0.6);
+        } else {
+          ctx.fillText(label.length > 9 ? label.slice(-9) : label, 0, 0);
+        }
+        ctx.restore();
+      }
+    }
+    ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+    ctx.fillStyle = '#0D0D0D'; ctx.fill();
+    ctx.strokeStyle = '#FF6B00'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = '#FF6B00'; ctx.font = 'bold 16px Inter';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔥', cx, cy);
+  }
+
+  window.spinRoulette = function() {
+    var available = _participants.filter(function(p){ return !_drawnSet.has(p.key); });
+    if (!available.length || _rouletteSpinning) return;
+    _rouletteSpinning = true;
+    document.getElementById('rouletteBtn').disabled = true;
+    document.getElementById('rouletteResult').style.display = 'none';
+
+    var winner     = available[Math.floor(Math.random() * available.length)];
+    var winnerIdx  = available.indexOf(winner);
+    var sliceAngle = (2 * Math.PI) / available.length;
+    var winnerMid  = winnerIdx * sliceAngle + sliceAngle / 2;
+    var baseAngle  = _rouletteAngle % (2 * Math.PI);
+    var extraSpins = (5 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+    var targetOffset = (2 * Math.PI - winnerMid - baseAngle - Math.PI / 2 + 4 * Math.PI) % (2 * Math.PI);
+    var totalRotation = extraSpins + targetOffset;
+    var duration = 5000, startTime = performance.now(), startAngle = _rouletteAngle;
+
+    function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+    function animate(now) {
+      var elapsed  = now - startTime;
+      var progress = Math.min(elapsed / duration, 1);
+      _rouletteAngle = startAngle + totalRotation * easeOut(progress);
+      _drawWheel();
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        _rouletteSpinning = false;
+        document.getElementById('rouletteWinnerText').textContent = winner.display;
+        document.getElementById('rouletteResult').style.display = 'block';
+        document.getElementById('rouletteBtn').disabled = false;
+        _showConfetti();
+        _showToast('🎉 ' + winner.display + ' sorteado(a)!', 'fire');
+      }
+    }
+    requestAnimationFrame(animate);
+  };
+
+  _drawWheel();
+
+  /* ================================================================
+     GRAVAÇÃO DE TELA
+  ================================================================ */
+  var _mediaRecorder = null, _recordedChunks = [], _recordStartTime = null, _recordTimerInterval = null;
+
+  window.tvStartRecording = async function() {
+    document.getElementById('tvOverlay').style.display = 'none';
+    await new Promise(function(r){ setTimeout(r, 300); });
+    try {
+      var stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+      var mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+      _mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+      _recordedChunks = [];
+      _mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) _recordedChunks.push(e.data); };
+      _mediaRecorder.onstop = _saveRecording;
+      _mediaRecorder.start(1000);
+      _recordStartTime = Date.now();
+      document.getElementById('tvOverlay').style.display = 'flex';
+      document.getElementById('tvRecordBtn').style.display = 'none';
+      document.getElementById('tvRecordBar').style.display = 'flex';
+      stream.getVideoTracks()[0].onended = function() { window.stopRecording(); };
+      _recordTimerInterval = setInterval(function() {
+        var elapsed = Math.floor((Date.now() - _recordStartTime) / 1000);
+        var m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+        var s = String(elapsed % 60).padStart(2,'0');
+        var tvT = document.getElementById('tvRecordTimer');
+        var rT  = document.getElementById('recordTimer');
+        if (tvT) tvT.textContent = m + ':' + s;
+        if (rT)  rT.textContent  = m + ':' + s;
+      }, 1000);
+      _showToast('⏺ Gravação iniciada', 'fire');
+    } catch(e) {
+      document.getElementById('tvOverlay').style.display = 'flex';
+      if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
+        _showToast('Erro ao iniciar gravação', 'err');
+      }
+    }
+  };
+
+  window.startRecording = async function() {
+    try {
+      var stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      _mediaRecorder = new MediaRecorder(stream);
+      _recordedChunks = [];
+      _mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) _recordedChunks.push(e.data); };
+      _mediaRecorder.onstop = _saveRecording;
+      _mediaRecorder.start();
+      _recordStartTime = Date.now();
+      var rb  = document.getElementById('recordBar');
+      var rbn = document.getElementById('recordBtn');
+      if (rb)  rb.style.display  = 'flex';
+      if (rbn) rbn.style.display = 'none';
+      _recordTimerInterval = setInterval(function() {
+        var elapsed = Math.floor((Date.now() - _recordStartTime) / 1000);
+        var m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+        var s = String(elapsed % 60).padStart(2,'0');
+        var rT = document.getElementById('recordTimer');
+        if (rT) rT.textContent = m + ':' + s;
+      }, 1000);
+      _showToast('⏺ Gravação iniciada', 'fire');
+    } catch(e) { _showToast('Não foi possível iniciar a gravação', 'err'); }
+  };
+
+  window.stopRecording = function() {
+    if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+      _mediaRecorder.stop();
+      _mediaRecorder.stream.getTracks().forEach(function(t){ t.stop(); });
+    }
+    clearInterval(_recordTimerInterval);
+    var rb   = document.getElementById('recordBar');
+    var rbn  = document.getElementById('recordBtn');
+    var tvRB = document.getElementById('tvRecordBar');
+    var tvRBtn = document.getElementById('tvRecordBtn');
+    if (rb)    rb.style.display    = 'none';
+    if (rbn)   rbn.style.display   = '';
+    if (tvRB)  tvRB.style.display  = 'none';
+    if (tvRBtn) tvRBtn.style.display = '';
+  };
+
+  function _saveRecording() {
+    var blob = new Blob(_recordedChunks, { type: 'video/webm' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = 'sorteio_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
+    a.click();
+    URL.revokeObjectURL(url);
+    _showToast('✓ Gravação salva!', 'ok');
+  }
+
+  /* ================================================================
+     EXPORTAR PDF / EXCEL
+  ================================================================ */
+  window.exportPDF = function() {
+    var now  = new Date().toLocaleString('pt-BR');
+    var rows = _drawHistory.map(function(h, i) {
+      return '<tr><td>' + (_drawHistory.length - i) + 'º</td><td>' + h.display + '</td><td>' + (h.time || '') + '</td></tr>';
+    }).join('');
+    var allRows = _participants.map(function(p) {
+      return '<tr><td>' + p.display + '</td><td>' + (_drawnSet.has(p.key) ? '✓ Sorteado' : 'Aguardando') + '</td></tr>';
+    }).join('');
+    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório Sorteios Facilita Cell</title>' +
+      '<style>body{font-family:Arial,sans-serif;padding:20px;color:#111}h1{color:#FF6B00;font-size:22px;margin-bottom:4px}' +
+      'p{font-size:12px;color:#888;margin-bottom:20px}h2{font-size:14px;margin:20px 0 8px;border-bottom:2px solid #FF6B00;padding-bottom:4px}' +
+      'table{width:100%;border-collapse:collapse;font-size:13px}th{background:#FF6B00;color:#fff;padding:6px 10px;text-align:left}' +
+      'td{padding:5px 10px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#fafafa}</style></head><body>' +
+      '<h1>🔥 Sorteios Facilita Cell</h1><p>Relatório gerado em ' + now + '</p>' +
+      '<h2>📊 Resumo</h2><p>Total: ' + _participants.length + ' | Sorteados: ' + _drawnSet.size + ' | Restantes: ' + (_participants.length - _drawnSet.size) + '</p>' +
+      '<h2>🏆 Histórico de Sorteios</h2><table><thead><tr><th>Posição</th><th>Número</th><th>Horário</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="3">Nenhum sorteio realizado</td></tr>') + '</tbody></table>' +
+      '<h2>👥 Todos os Participantes</h2><table><thead><tr><th>Número</th><th>Status</th></tr></thead><tbody>' +
+      (allRows || '<tr><td colspan="2">Nenhum participante</td></tr>') + '</tbody></table></body></html>';
+    var w = window.open('', '_blank');
+    w.document.write(html); w.document.close();
+    setTimeout(function(){ w.print(); }, 500);
+  };
+
+  window.exportExcel = function() {
+    var now = new Date().toISOString().slice(0,10);
+    var csv = 'sep=;\nRELATÓRIO SORTEIOS FACILITA CELL\nGerado em;' + new Date().toLocaleString('pt-BR') + '\n\nHISTÓRICO DE SORTEIOS\nPosição;Número;Horário\n';
+    _drawHistory.forEach(function(h, i) { csv += (_drawHistory.length - i) + 'º;' + h.display + ';' + (h.time || '') + '\n'; });
+    csv += '\nTODOS OS PARTICIPANTES\nNúmero;Status\n';
+    _participants.forEach(function(p) { csv += p.display + ';' + (_drawnSet.has(p.key) ? 'Sorteado' : 'Aguardando') + '\n'; });
+    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = 'sorteios_' + now + '.csv';
+    a.click(); URL.revokeObjectURL(url);
+    _showToast('✓ Excel exportado!', 'ok');
+  };
+
+  /* ================================================================
+     SORTEIO — ADICIONAR / REMOVER
+  ================================================================ */
+  window.addParticipant = function() {
+    var input = document.getElementById('phoneInput');
+    var raw   = input.value.trim();
+    if (!raw) { _showToast('Digite um número de telefone', 'err'); return; }
+    var formatted = _formatPhone(raw);
+    var key = formatted.replace(/\D/g, '');
+    if (key.length < 8) { _showToast('Número inválido — mínimo 8 dígitos', 'err'); return; }
+    if (_participants.find(function(p){ return p.key === key; })) { _showToast('Esse número já foi cadastrado!', 'err'); input.value = ''; return; }
+    var data = { key: key, display: formatted, drawn: false, criadoEm: Date.now() };
+    if (_db) {
+      _setFbSyncing();
+      _db.ref('participantes').push(data).then(function(){ _clearFbSyncing(); });
+    } else {
+      _participants.push(Object.assign({ id: Date.now() }, data));
+      _render();
+    }
+    input.value = ''; input.focus();
+    _showToast('✓ ' + formatted + ' adicionado!', 'ok');
+  };
+
+  window.removeParticipant = function(id, key) {
+    if (_drawnSet.has(key)) { _showToast('Não é possível remover um número já sorteado', 'err'); return; }
+    if (_db) {
+      _setFbSyncing();
+      _db.ref('participantes/' + id).remove().then(function(){ _clearFbSyncing(); });
+    } else {
+      _participants = _participants.filter(function(p){ return p.id !== id; });
+      _render();
+    }
+  };
+
+  /* ================================================================
+     SORTEIO PRINCIPAL — drawWinner
+  ================================================================ */
+  window.drawWinner = function(fromTV) {
+    fromTV = !!fromTV;
+    if (_isDrawing) return;
+    var available = _participants.filter(function(p){ return !_drawnSet.has(p.key); });
+    if (!available.length) { _showToast('Todos já foram sorteados!', 'err'); return; }
+
+    _isDrawing = true;
+    var btn   = document.getElementById('drawBtn');
+    var tvBtn = document.getElementById('tvDrawBtn');
+    if (btn)   { btn.classList.add('spinning'); btn.disabled = true; }
+    if (tvBtn) { tvBtn.disabled = true; }
+
+    var numBox = document.getElementById('winnerBox');
+    if (numBox) { numBox.style.display = 'block'; numBox.innerHTML = _buildResultHTML('...', ''); }
+    var tvNum = document.getElementById('tvNumber');
+    if (tvNum) { tvNum.textContent = '...'; tvNum.classList.add('flashing'); }
+
+    /* Escolhe o vencedor ANTES da animação */
+    var winner = available[Math.floor(Math.random() * available.length)];
+
+    var flashes = 0;
+    var interval = setInterval(function() {
+      var rnd = available[Math.floor(Math.random() * available.length)];
+      if (numBox && numBox.querySelector('.draw-result-number')) {
+        numBox.querySelector('.draw-result-number').textContent = rnd.display;
+        numBox.querySelector('.draw-result-number').classList.add('flashing');
+      }
+      if (tvNum) tvNum.textContent = rnd.display;
+      flashes++;
+      if (flashes >= 20) {
+        clearInterval(interval);
+        var time = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        var pos  = _drawHistory.length + 1;
+
+        if (numBox) numBox.innerHTML = _buildResultHTML(winner.display, pos + 'º sorteio · ' + time);
+        if (tvNum) {
+          tvNum.textContent = winner.display;
+          tvNum.classList.remove('flashing');
+          var tvSub = document.getElementById('tvSub');
+          if (tvSub) { tvSub.textContent = pos + 'º sorteio · ' + time; tvSub.style.opacity = '1'; }
+        }
+
+        function _finish() {
+          if (btn)   { btn.classList.remove('spinning'); }
+          _isDrawing = false;
+          _updateDrawBtn();
+          _updateTVStats();
+          _showConfetti();
+          _showToast('🎉 ' + winner.display + ' sorteado(a)!', 'fire');
+          _drawWheel();
+        }
+
+        if (_db) {
+          _setFbSyncing();
+          var partRef = _db.ref('participantes/' + winner.id);
+          partRef.once('value').then(function(snap) {
+            var upd = Object.assign({}, snap.val(), { drawn: true });
+            return partRef.set(upd);
+          }).then(function() {
+            return _db.ref('historico').push({
+              display: winner.display, key: winner.key, time: time, position: pos,
+              ts: firebase.database.ServerValue.TIMESTAMP
+            });
+          }).then(function() {
+            _clearFbSyncing();
+            _finish();
+          }).catch(function(err) {
+            console.error('Erro Firebase:', err);
+            _clearFbSyncing();
+            _finish();
+          });
+        } else {
+          _drawnSet.add(winner.key);
+          _drawHistory.unshift({ display: winner.display, time: time, position: pos });
+          _render(); _renderHistory();
+          _finish();
+        }
+      }
+    }, 70);
+  };
+
+  /* ================================================================
+     REINICIAR / LIMPAR
+  ================================================================ */
+  window.resetDrawn = function() {
+    if (!_drawnSet.size) { _showToast('Nenhum sorteio para reiniciar', 'err'); return; }
+    if (!confirm('Reiniciar todos os sorteios? Os participantes continuarão cadastrados.')) return;
+    if (_db) {
+      _setFbSyncing();
+      _db.ref('participantes').once('value').then(function(snap) {
+        var chain = Promise.resolve();
+        if (snap.exists()) {
+          snap.forEach(function(c) {
+            chain = chain.then(function() {
+              return _db.ref('participantes/' + c.key).set(Object.assign({}, c.val(), { drawn: false }));
+            });
+          });
+        }
+        return chain;
+      }).then(function() {
+        return _db.ref('historico').remove();
+      }).then(function() { _clearFbSyncing(); });
+    } else {
+      _drawnSet.clear(); _drawHistory = [];
+      _render(); _renderHistory();
+    }
+    var wb = document.getElementById('winnerBox');
+    if (wb) wb.style.display = 'none';
+    _showToast('Sorteios reiniciados', 'ok');
+  };
+
+  window.clearAll = function() {
+    if (!_participants.length) { _showToast('Nada para limpar', 'err'); return; }
+    if (!confirm('Apagar TODOS os participantes e histórico?')) return;
+    if (_db) {
+      _setFbSyncing();
+      _db.ref('participantes').remove().then(function() {
+        return _db.ref('historico').remove();
+      }).then(function() { _clearFbSyncing(); });
+    } else {
+      _participants = []; _drawnSet.clear(); _drawHistory = [];
+      _render(); _renderHistory();
+    }
+    var wb = document.getElementById('winnerBox');
+    if (wb) wb.style.display = 'none';
+    _showToast('Lista apagada', 'ok');
+  };
+
+  /* ================================================================
+     CONFETTI
+  ================================================================ */
+  function _showConfetti() {
+    var wrap   = document.getElementById('confettiWrap');
+    var colors = ['#FF6B00','#FFB347','#FFD700','#FF4500','#FFF','#22C55E'];
+    wrap.innerHTML = '';
+    for (var i = 0; i < 60; i++) {
+      var el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left            = (Math.random() * 100) + 'vw';
+      el.style.top             = '-20px';
+      el.style.background      = colors[Math.floor(Math.random() * colors.length)];
+      el.style.borderRadius    = Math.random() > 0.5 ? '50%' : '2px';
+      el.style.width           = (8 + Math.random() * 8) + 'px';
+      el.style.height          = (8 + Math.random() * 8) + 'px';
+      el.style.animationDuration = (2 + Math.random() * 2) + 's';
+      el.style.animationDelay  = (Math.random() * 0.5) + 's';
+      wrap.appendChild(el);
+    }
+    setTimeout(function(){ wrap.innerHTML = ''; }, 4000);
+  }
+
+  /* ================================================================
+     TABS
+  ================================================================ */
+  window.switchTab = function(name) {
+    var panels = ['manual','import','roleta','sorteio','historico'];
+    document.querySelectorAll('.tab').forEach(function(t, i) {
+      t.classList.toggle('active', panels[i] === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'roleta') _drawWheel();
+  };
+
+  /* expõe funções internas que o HTML precisa */
+  window._drawWheel   = _drawWheel;
+  window._showToast   = _showToast;
+
+  document.getElementById('phoneInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') window.addParticipant();
+  });
+
+})(); /* fim IIFE */
+</script>
+</body>
+</html>
